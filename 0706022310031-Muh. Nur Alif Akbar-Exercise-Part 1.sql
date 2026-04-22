@@ -1,0 +1,139 @@
+-- A THEORY
+
+-- 1. TRUE
+-- 2. FALSE
+-- 3. TRUE
+-- 4. TRUE
+
+-- ESSAY
+
+-- 5. 
+-- PROCEDURE: 
+-- > BISA MEMILIKI BANYAK OUTPUT 
+-- > MENJALANKAN SUATU TUGAS TERTENTU TAPI TIDAK MENGEMBALIKAN NILAI SECARA LANGSUNG
+-- > MANGGILNYA PAKAI CALL
+-- FUNCTION: 
+-- > HANYA BISA SATU OUTPUT
+-- > DIRANCANG UNTUK MENGEMBALIKAN SATU NILAI ATAU HASIL
+-- > MANGGILNYA PAKAI SELECT
+
+-- 6 
+-- IN = MENGAMBIL INPUT DARI LUAR, 
+-- OUT = MENGELUARKAN HASIL SETELAH DILAKUKANNYA PERINTAH, 
+-- INOUT = BISA SEBAGAI INPUT DIAWAL YANG MANA JUGA BISA MENGELUARKAN HASIL SETELAH TERJADINYA PERINTAH
+
+-- 7 
+DELIMITER $$
+CREATE PROCEDURE pHW()
+BEGIN 
+	SELECT 'Hello World' AS HASIL;
+END $$
+DELIMITER ;
+
+call pHW();
+
+-- 8 
+DELIMITER $$
+CREATE FUNCTION fCalculator(num1 int, op varchar(1), num2 int)
+RETURNS INT DETERMINISTIC
+BEGIN
+	DECLARE HASIL INT;
+    
+     IF op = '+' THEN
+        SET HASIL = num1 + num2;
+    ELSEIF op = '-' THEN
+        SET HASIL = num1 - num2;
+    ELSEIF op = '*' THEN
+        SET HASIL = num1 * num2;
+    ELSEIF op = '/' THEN
+		SET HASIL = num1 / num2;
+	END IF;
+    
+    RETURN HASIL;
+END $$
+DELIMITER ;
+
+select fCalculator(5, '*', 3) AS HASIL;
+
+-- 9
+DELIMITER $$
+CREATE PROCEDURE pAutogenFilmID(OUT id_result INT)
+BEGIN
+	SET id_result = 7;
+END $$
+DELIMITER ;
+
+set @id_result = 0;
+call afl_satu.pAutogenFilmID(@id_result);
+select @id_result;
+
+-- 10
+DELIMITER $$
+CREATE PROCEDURE  pFilmReport()
+BEGIN
+	SELECT F.TITLE, CONCAT(COUNT(T.FILM_ID), ' times')
+    FROM FILM F
+    LEFT JOIN TRANSACTION T ON T.FILM_ID = F.FILM_ID
+    GROUP BY 1;
+END $$
+DELIMITER ;
+
+call afl_satu.pFilmReport();
+
+-- 11
+DELIMITER $$
+CREATE FUNCTION fCheckFilm(ID INT)
+RETURNS VARCHAR(255) READS SQL DATA
+BEGIN
+	DECLARE HASIL VARCHAR(255);
+    
+    SET HASIL =(
+	SELECT IF(T.ACTUAL_RETURN_DATE IS NOT NULL,
+    CONCAT('Film ', F.TITLE, ' Is Available'),
+    CONCAT('Film ', F.TITLE, ' Is Not Available'))
+    FROM FILM F
+    LEFT JOIN TRANSACTION T ON T.FILM_ID = F.FILM_ID
+    WHERE F.FILM_ID = ID
+    );	
+    RETURN HASIL;
+END $$
+DELIMITER ;
+
+select afl_satu.fCheckFilm(2);
+select afl_satu.fCheckFilm(6);
+
+-- 12
+DELIMITER $$
+CREATE FUNCTION fTotalTrans(Tno varchar(4))
+RETURNS VARCHAR(255) READS SQL DATA
+BEGIN
+	DECLARE R_DATE DATE;
+    DECLARE AR_DATE DATE;
+    DECLARE D_LATE INT;
+    DECLARE T_COST INT;
+    
+	SELECT RETURN_DATE, ACTUAL_RETURN_DATE INTO R_DATE, AR_DATE
+    FROM TRANSACTION
+    WHERE TRN_NO = Tno;
+    
+    IF AR_DATE IS NULL THEN
+    SET AR_DATE = CURDATE();
+    END IF;
+    
+    SET D_LATE = DATEDIFF(AR_DATE, R_DATE);
+    
+    IF D_LATE > 0 THEN
+		SET T_COST = 5000 + (D_LATE * 500);
+    ELSE
+		SET T_COST = 5000;
+	END IF;
+    
+    RETURN CONCAT('Total Transaction = Rp. ', FORMAT(T_COST, 0));
+END $$
+DELIMITER ;
+
+select afl_satu.fTotalTrans('1004');
+select afl_satu.fTotalTrans('1002');
+select afl_satu.fTotalTrans('1009');
+
+
